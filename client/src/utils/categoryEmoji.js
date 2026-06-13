@@ -5,6 +5,7 @@ const CATEGORY_EMOJIS = {
   breakfast: '🥞',
   lunch: '🥪',
   dinner: '🍲',
+  'main course': '🍛',
   appetizer: '🥟',
   snack: '🍿',
   drink: '🥤',
