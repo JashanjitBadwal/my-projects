@@ -65,10 +65,19 @@ export default function RecipeList({ mode }) {
 
   const title =
     mode === 'favorites' ? 'My Favorites' : mode === 'mine' ? 'My Recipes' : 'Browse Recipes';
+  const isBrowse = mode !== 'mine' && mode !== 'favorites';
 
   return (
     <div>
-      <h2>{title}</h2>
+      {isBrowse ? (
+        <div className="hero">
+          <div className="hero-emojis">🍰 🥘 🍪 🍜 🥗</div>
+          <h1>Find your next favorite dish</h1>
+          <p>Browse, save, and share recipes from cooks around the world.</p>
+        </div>
+      ) : (
+        <h2>{title}</h2>
+      )}
       {mode !== 'mine' && mode !== 'favorites' && (
         <div className="filters">
           <input
