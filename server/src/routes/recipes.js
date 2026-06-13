@@ -1,3 +1,4 @@
+// Recipe routes: listing/searching, CRUD, and favorites.
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import db from '../db/index.js';
@@ -5,6 +6,9 @@ import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Convert a raw DB row (with JSON-encoded ingredients/steps) into the
+// shape returned by the API, including whether the current user has
+// favorited it.
 function serializeRecipe(row, favoriteRecipeIds) {
   return {
     id: row.id,
@@ -22,6 +26,7 @@ function serializeRecipe(row, favoriteRecipeIds) {
   };
 }
 
+// Get the set of recipe ids the given user has favorited.
 function getFavoriteIds(userId) {
   if (!userId) return new Set();
   const rows = db.prepare('SELECT recipe_id FROM favorites WHERE user_id = ?').all(userId);
@@ -29,6 +34,8 @@ function getFavoriteIds(userId) {
 }
 
 // Optional auth: attaches req.user if a valid token is present, but doesn't require one.
+// Used on public endpoints (browsing recipes) that still need to know the
+// current user for things like "isFavorite".
 function optionalAuth(req, res, next) {
   const header = req.headers.authorization;
   if (header && header.startsWith('Bearer ')) {
@@ -42,6 +49,11 @@ function optionalAuth(req, res, next) {
   next();
 }
 
+// GET /api/recipes - list recipes, with optional filters:
+//   ?search=    matches title or description
+//   ?category=  exact category match
+//   ?mine=true  only the current user's recipes (requires auth)
+//   ?favorites=true  only recipes the current user has favorited (requires auth)
 router.get('/', optionalAuth, (req, res) => {
   const { search, category, mine, favorites } = req.query;
 
@@ -87,6 +99,8 @@ router.get('/', optionalAuth, (req, res) => {
   res.json(rows.map((row) => serializeRecipe(row, favoriteIds)));
 });
 
+// GET /api/recipes/categories - list all distinct categories in use,
+// for populating the category filter dropdown on the frontend.
 router.get('/categories', (_req, res) => {
   const rows = db
     .prepare('SELECT DISTINCT category FROM recipes WHERE category IS NOT NULL AND category != "" ORDER BY category')
@@ -94,6 +108,7 @@ router.get('/categories', (_req, res) => {
   res.json(rows.map((r) => r.category));
 });
 
+// GET /api/recipes/:id - fetch a single recipe by id.
 router.get('/:id', optionalAuth, (req, res) => {
   const row = db
     .prepare(
@@ -109,6 +124,7 @@ router.get('/:id', optionalAuth, (req, res) => {
   res.json(serializeRecipe(row, favoriteIds));
 });
 
+// POST /api/recipes - create a new recipe owned by the authenticated user.
 router.post('/', requireAuth, (req, res) => {
   const { title, description, ingredients, steps, category, prepTimeMinutes } = req.body;
 
@@ -142,6 +158,7 @@ router.post('/', requireAuth, (req, res) => {
   res.status(201).json(serializeRecipe(row, new Set()));
 });
 
+// PUT /api/recipes/:id - update a recipe. Only the owning user can edit it.
 router.put('/:id', requireAuth, (req, res) => {
   const existing = db.prepare('SELECT * FROM recipes WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Recipe not found' });
@@ -180,6 +197,7 @@ router.put('/:id', requireAuth, (req, res) => {
   res.json(serializeRecipe(row, getFavoriteIds(req.user.id)));
 });
 
+// DELETE /api/recipes/:id - delete a recipe. Only the owning user can delete it.
 router.delete('/:id', requireAuth, (req, res) => {
   const existing = db.prepare('SELECT * FROM recipes WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Recipe not found' });
@@ -191,10 +209,12 @@ router.delete('/:id', requireAuth, (req, res) => {
   res.status(204).end();
 });
 
+// POST /api/recipes/:id/favorite - mark a recipe as a favorite for the current user.
 router.post('/:id/favorite', requireAuth, (req, res) => {
   const recipe = db.prepare('SELECT id FROM recipes WHERE id = ?').get(req.params.id);
   if (!recipe) return res.status(404).json({ error: 'Recipe not found' });
 
+  // INSERT OR IGNORE so re-favoriting an already-favorited recipe is a no-op.
   db.prepare('INSERT OR IGNORE INTO favorites (user_id, recipe_id) VALUES (?, ?)').run(
     req.user.id,
     req.params.id
@@ -203,6 +223,7 @@ router.post('/:id/favorite', requireAuth, (req, res) => {
   res.status(204).end();
 });
 
+// DELETE /api/recipes/:id/favorite - remove a recipe from the current user's favorites.
 router.delete('/:id/favorite', requireAuth, (req, res) => {
   db.prepare('DELETE FROM favorites WHERE user_id = ? AND recipe_id = ?').run(
     req.user.id,

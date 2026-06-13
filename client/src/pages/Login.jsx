@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+// Login form. On success, redirects to the recipe browser.
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();

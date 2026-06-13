@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
+// Full detail view for a single recipe, with favorite toggle and
+// edit/delete actions for the recipe's owner.
 export default function RecipeDetail() {
   const { id } = useParams();
   const { token, user } = useAuth();
@@ -11,6 +13,7 @@ export default function RecipeDetail() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
+  // Load the recipe whenever the id (or auth token) changes.
   useEffect(() => {
     api
       .getRecipe(id, token)
@@ -19,6 +22,7 @@ export default function RecipeDetail() {
       .finally(() => setLoading(false));
   }, [id, token]);
 
+  // Toggle the favorite status for the current user.
   async function toggleFavorite() {
     try {
       if (recipe.isFavorite) {
@@ -32,6 +36,7 @@ export default function RecipeDetail() {
     }
   }
 
+  // Delete the recipe (owner only) after confirmation, then go to "My Recipes".
   async function handleDelete() {
     if (!confirm('Delete this recipe? This cannot be undone.')) return;
     try {
@@ -46,6 +51,7 @@ export default function RecipeDetail() {
   if (error) return <div className="error-banner">{error}</div>;
   if (!recipe) return <p>Recipe not found.</p>;
 
+  // Only the recipe's creator can edit or delete it.
   const isOwner = user && user.id === recipe.userId;
 
   return (

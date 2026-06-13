@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
+// Default shape of the form. Ingredients/steps start with one empty
+// entry so the user always has a row to fill in.
 const emptyRecipe = {
   title: '',
   description: '',
@@ -12,6 +14,8 @@ const emptyRecipe = {
   steps: [''],
 };
 
+// Shared form for both creating a new recipe and editing an existing one
+// (edit mode is determined by the presence of an :id route param).
 export default function RecipeForm() {
   const { id } = useParams();
   const isEdit = !!id;
@@ -22,6 +26,7 @@ export default function RecipeForm() {
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
 
+  // In edit mode, fetch the existing recipe and populate the form.
   useEffect(() => {
     if (!isEdit) return;
     api
@@ -40,6 +45,7 @@ export default function RecipeForm() {
       .finally(() => setLoading(false));
   }, [id, isEdit, token]);
 
+  // Update a single entry within a dynamic list field (ingredients/steps).
   function updateListItem(field, index, value) {
     setForm((f) => {
       const list = [...f[field]];
@@ -48,19 +54,23 @@ export default function RecipeForm() {
     });
   }
 
+  // Append a new empty entry to a dynamic list field.
   function addListItem(field) {
     setForm((f) => ({ ...f, [field]: [...f[field], ''] }));
   }
 
+  // Remove an entry from a dynamic list field.
   function removeListItem(field, index) {
     setForm((f) => ({ ...f, [field]: f[field].filter((_, i) => i !== index) }));
   }
 
+  // Submit the form: create or update the recipe, then go to its detail page.
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
     setSaving(true);
 
+    // Trim and drop blank ingredient/step entries before sending to the API.
     const payload = {
       title: form.title,
       description: form.description,

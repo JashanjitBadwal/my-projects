@@ -3,6 +3,10 @@ import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import RecipeCard from '../components/RecipeCard';
 
+// Recipe listing page, reused for three views depending on `mode`:
+//   undefined  -> browse all recipes (with search/category filters)
+//   'favorites' -> the current user's favorited recipes
+//   'mine'      -> recipes created by the current user
 export default function RecipeList({ mode }) {
   const { token, user } = useAuth();
   const [recipes, setRecipes] = useState([]);
@@ -12,6 +16,7 @@ export default function RecipeList({ mode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Fetch recipes from the API based on the current mode and filters.
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -28,14 +33,19 @@ export default function RecipeList({ mode }) {
     }
   }, [search, category, mode, token]);
 
+  // Re-fetch whenever the search/category/mode/token changes.
   useEffect(() => {
     load();
   }, [load]);
 
+  // Load the list of categories once, for the filter dropdown.
   useEffect(() => {
     api.getCategories().then(setCategories).catch(() => {});
   }, []);
 
+  // Add or remove the recipe from the current user's favorites, updating
+  // local state optimistically (and removing it from the favorites view
+  // immediately once un-favorited).
   async function toggleFavorite(recipe) {
     try {
       if (recipe.isFavorite) {

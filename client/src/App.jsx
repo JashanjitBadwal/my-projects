@@ -8,16 +8,21 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import './App.css'
 
+// Root component: renders the nav bar and the route tree.
+// Routes that require a logged-in user are wrapped in ProtectedRoute.
 function App() {
   return (
     <>
       <NavBar />
       <main className="container">
         <Routes>
+          {/* Browse all recipes (public) */}
           <Route path="/" element={<RecipeList />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          {/* Recipe detail (public) */}
           <Route path="/recipes/:id" element={<RecipeDetail />} />
+          {/* Create a new recipe (auth required) */}
           <Route
             path="/recipes/new"
             element={
@@ -26,6 +31,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* Edit an existing recipe (auth required, ownership checked server-side) */}
           <Route
             path="/recipes/:id/edit"
             element={
@@ -34,6 +40,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* Current user's favorited recipes (auth required) */}
           <Route
             path="/favorites"
             element={
@@ -42,6 +49,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* Recipes created by the current user (auth required) */}
           <Route
             path="/my-recipes"
             element={

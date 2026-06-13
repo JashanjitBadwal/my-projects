@@ -1,10 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+// Top navigation bar. Shows different links depending on whether a user is logged in.
 export default function NavBar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  // Log out and send the user back to the recipe browser.
   function handleLogout() {
     logout();
     navigate('/');

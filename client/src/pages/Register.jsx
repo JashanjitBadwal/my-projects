@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+// Sign-up form. Creates an account and logs the user in immediately.
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();

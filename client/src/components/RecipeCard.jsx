@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 
+// Summary card shown in recipe grids (browse/favorites/my recipes lists).
 export default function RecipeCard({ recipe, onToggleFavorite, canFavorite }) {
   return (
     <div className="recipe-card">
