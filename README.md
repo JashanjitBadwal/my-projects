@@ -19,13 +19,13 @@ npm run dev
 
 The API runs on `http://localhost:4000`. SQLite database file is created automatically at `server/data/recipes.db`.
 
-To populate the database with some sample sweet dish (dessert) recipes, run:
+To populate the database with some sample recipes (desserts plus a few popular main dishes/appetizers), run:
 
 ```bash
 npm run seed
 ```
 
-This creates a demo user (`desserts@example.com` / `password123`) that owns the seeded recipes.
+This creates a demo user (`chef@example.com` / `password123`) that owns the seeded recipes.
 
 ### 2. Frontend
 
