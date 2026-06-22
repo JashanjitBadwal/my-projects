@@ -1,0 +1,128 @@
+
+version: 2.1
+
+orbs:
+  aws-ecr: circleci/aws-ecr@6.1.0
+  aws-ecs: circleci/aws-ecs@2.5.0
+
+# parameters for reuse
+parameters:
+  image-tag:
+    type: string
+    default: "ci-${CIRCLE_SHA1}"
+  default-branch:
+    type: string
+    default: "main"
+
+jobs:
+  build-and-test:
+    docker:
+      - image: cimg/python:3.11  # primary container (CircleCI maintained)
+      - image: circleci/postgres:13.4-postgis-3.1  # secondary container (service/sidecar)
+        name: postgres
+        environment:
+          POSTGRES_USER: testuser
+          POSTGRES_DB: testdb
+          POSTGRES_PASSWORD: password
+    steps:
+      - checkout
+      - run:
+          name: Wait for Postgres
+          command: |
+            echo "Waiting for Postgres to accept connections..."
+            for i in `seq 1 20`; do
+              python - <<PY
+import sys, time, psycopg2
+try:
+    conn = psycopg2.connect(host="localhost", dbname="testdb", user="testuser", password="password", connect_timeout=2)
+    conn.close()
+    print("pg up")
+    sys.exit(0)
+except Exception as e:
+    print("waiting... %s" % e)
+    time.sleep(1)
+    sys.exit(1)
+PY
+      - run:
+          name: Install system deps & python deps
+          command: |
+            sudo apt-get update -y
+            sudo apt-get install -y postgresql-client
+            python -m pip install --upgrade pip
+            pip install -r app/requirements.txt
+            pip install pytest pytest-cov junit-xml
+      - run:
+          name: Run unit tests (pytest → junit)
+          command: |
+            pytest -q --junitxml=pytest-junit.xml
+      - store_test_results:
+          path: pytest-junit.xml
+      - store_artifacts:
+          path: pytest-junit.xml
+          destination: junit
+      - run:
+          name: Check changed files to decide whether to build image
+          command: |
+            chmod +x scripts/check_changes.sh
+            ./scripts/check_changes.sh || echo "Image build skipped"
+      - when:
+          condition:
+            not:
+              equal: [ "<< pipeline.parameters.skip_build_image >>", "true" ]
+          steps:
+            - setup_remote_docker:
+                docker_layer_caching: true
+            - run:
+                name: Build docker image
+                command: |
+                  docker build -t myapp:${CIRCLE_SHA1} .
+            - run:
+                name: Save docker image as artifact (optional)
+                command: |
+                  docker save myapp:${CIRCLE_SHA1} -o myapp-${CIRCLE_SHA1}.tar
+            - store_artifacts:
+                path: myapp-${CIRCLE_SHA1}.tar
+                destination: docker-image
+
+  push-to-ecr:
+    machine: true
+    steps:
+      - checkout
+      # Use OIDC-based authentication or AWS keys via orb
+      - aws-ecr/build-and-push-image:
+          repo: "my-ecr-repo"               # replace with your ECR repo name
+          region: "us-west-2"
+          create_repo: true
+          tag: "<< parameters.image-tag >>"
+
+  deploy-to-ecs:
+    machine: true
+    steps:
+      - checkout
+      - aws-ecs/deploy-service-update:
+          family: "my-ecs-task-family"
+          cluster-name: "my-ecs-cluster"
+          container-image-name-updates: "container=<< parameters.image-name >>,image=<< parameters.image-uri >>"
+          require-rollout: true
+
+workflows:
+  version: 2
+  ci:
+    jobs:
+      - build-and-test:
+          name: build-and-test
+          # pass a pipeline parameter to allow the skip flag; default not set
+      - push-to-ecr:
+          requires:
+            - build-and-test
+          filters:
+            branches:
+              only:
+                - main    # only push to ECR when building main (default branch)
+      - deploy-to-ecs:
+          requires:
+            - push-to-ecr
+          filters:
+            branches:
+              only:
+                - main
