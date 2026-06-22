@@ -1,6 +1,7 @@
-FROM node:20-alpine
+# Uses only Python stdlib (http.server) — no requirements.txt needed, so
+# the slim base image is sufficient with no extra layer for dependencies.
+FROM python:3.12-slim
 WORKDIR /app
-COPY package.json ./
 COPY src ./src
 EXPOSE 8080
-CMD ["node", "src/server.js"]
+CMD ["python3", "src/server.py"]

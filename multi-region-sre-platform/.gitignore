@@ -3,5 +3,6 @@
 *.tfstate.*
 *.tfplan
 crash.log
-node_modules/
+__pycache__/
+*.pyc
 *.log

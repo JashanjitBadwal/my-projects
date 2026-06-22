@@ -25,7 +25,7 @@ Both regions serve live traffic (active-active). Route53 health checks probe eac
 - `terraform/modules/route53` — health checks + latency-based record sets
 - `terraform/envs/us-east-1`, `terraform/envs/us-west-2` — region stacks (VPC + EKS)
 - `terraform/envs/global` — Route53 hosted zone, health checks, DNS records (depends on both regional stacks for ALB endpoints)
-- `app/src` — sample stateless API (Node/Express) with `/healthz`, `/readyz`, `/`
+- `app/src` — sample stateless API (Python, stdlib `http.server`) with `/healthz`, `/readyz`, `/`
 - `app/k8s/base` — Kustomize base manifests (Deployment, Service, HPA, PDB)
 - `app/k8s/overlays/<region>` — per-region patches (replica count, region label)
 - `monitoring/prometheus` — scrape config + alerting rules (SLO burn-rate alerts)
