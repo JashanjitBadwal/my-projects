@@ -1,0 +1,12 @@
+# Caps voluntary disruption (node drains, cluster-autoscaler scale-down) at
+# 1 pod out of the 3-replica baseline, so this region keeps serving during
+# routine maintenance, not just unplanned failures.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: sre-demo-app
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: sre-demo-app

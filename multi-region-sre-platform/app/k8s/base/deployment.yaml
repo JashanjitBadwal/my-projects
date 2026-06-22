@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sre-demo-app
+  labels:
+    app: sre-demo-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: sre-demo-app
+  template:
+    metadata:
+      labels:
+        app: sre-demo-app
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+    spec:
+      containers:
+        - name: app
+          image: sre-demo-app:latest
+          ports:
+            - containerPort: 8080
+          env:
+            # Overridden per region by the kustomize patch in
+            # app/k8s/overlays/<region>/kustomization.yaml.
+            - name: REGION
+              value: REPLACE_REGION
+          # Gates Service/in-cluster traffic on app warm-up (see server.js);
+          # independent of livenessProbe so a slow-starting pod isn't killed.
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          # Only restarts the pod if the process itself is wedged; does not
+          # gate external (Route53) traffic — that's the separate health
+          # check in terraform/modules/route53 against the same /healthz path.
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi

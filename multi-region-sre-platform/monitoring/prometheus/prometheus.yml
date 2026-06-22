@@ -1,0 +1,35 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - alerts.yml
+
+scrape_configs:
+  # Probes each region's public endpoint for SLO measurement. The demo app
+  # doesn't expose a /metrics endpoint itself, so blackbox_exporter supplies
+  # probe_success / probe_duration_seconds, which back the uptime and
+  # latency SLO panels.
+  - job_name: blackbox-region-healthz
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - https://us-east-1.api.example.com/healthz
+        labels:
+          region: us-east-1
+      - targets:
+          - https://us-west-2.api.example.com/healthz
+        labels:
+          region: us-west-2
+    # Standard blackbox_exporter pattern: rewrite the scrape target so
+    # Prometheus hits blackbox-exporter:9115/probe?target=<original-url>
+    # instead of scraping the regional URL directly.
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115

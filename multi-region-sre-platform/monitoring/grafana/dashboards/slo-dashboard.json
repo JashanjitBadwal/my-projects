@@ -1,0 +1,88 @@
+{
+  "title": "Multi-Region SRE Platform — SLO Dashboard",
+  "schemaVersion": 39,
+  "tags": ["sre", "slo", "multi-region"],
+  "time": { "from": "now-24h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Uptime by Region (30d)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "avg_over_time(probe_success{job=\"blackbox-region-healthz\"}[30d]) * 100",
+          "legendFormat": "{{region}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "yellow", "value": 99.5 },
+              { "color": "green", "value": 99.9 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Error Budget Remaining (30d, 99.9% target)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 0 },
+      "targets": [
+        {
+          "expr": "(1 - ((1 - avg_over_time(probe_success{job=\"blackbox-region-healthz\"}[30d])) / 0.001)) * 100",
+          "legendFormat": "{{region}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "id": 3,
+      "title": "Healthz Probe Latency (p99 target: 300ms)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 6 },
+      "targets": [
+        {
+          "expr": "probe_duration_seconds{job=\"blackbox-region-healthz\"}",
+          "legendFormat": "{{region}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "thresholdsStyle": { "mode": "line" } },
+          "thresholds": { "steps": [{ "color": "green", "value": 0 }, { "color": "red", "value": 0.3 }] }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Region Health (1 = up, 0 = down)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 14 },
+      "targets": [
+        {
+          "expr": "probe_success{job=\"blackbox-region-healthz\"}",
+          "legendFormat": "{{region}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Active Pods per Region",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 22 },
+      "targets": [
+        {
+          "expr": "sum(kube_pod_status_ready{namespace=\"default\"}) by (region)",
+          "legendFormat": "{{region}}"
+        }
+      ]
+    }
+  ]
+}
