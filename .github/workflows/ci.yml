@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.15.5"
+      - name: terraform fmt check
+        run: terraform fmt -recursive -check -diff
+      - name: terraform validate (modules)
+        run: |
+          for d in terraform/modules/*/; do
+            echo "validating $d"
+            terraform -chdir="$d" init -backend=false
+            terraform -chdir="$d" validate
+          done
+
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: smoke test demo app
+        run: |
+          REGION=ci PORT=8080 node app/src/server.js &
+          sleep 1
+          curl -sf localhost:8080/healthz
+          curl -sf localhost:8080/

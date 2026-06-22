@@ -1,0 +1,9 @@
+{
+  "name": "sre-demo-app",
+  "version": "1.0.0",
+  "description": "Stateless demo service for the multi-region SRE platform",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  }
+}
