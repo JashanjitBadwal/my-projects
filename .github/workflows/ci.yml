@@ -30,12 +30,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-python@v5
         with:
-          node-version: "20"
+          python-version: "3.12"
       - name: smoke test demo app
         run: |
-          REGION=ci PORT=8080 node app/src/server.js &
+          REGION=ci PORT=8080 python3 app/src/server.py &
           sleep 1
           curl -sf localhost:8080/healthz
           curl -sf localhost:8080/
