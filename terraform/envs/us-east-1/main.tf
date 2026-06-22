@@ -6,6 +6,9 @@ terraform {
       version = "~> 5.0"
     }
   }
+  # REPLACE_ME-tfstate must be created out-of-band before first init; this
+  # stack and us-west-2 use independent state so they can be applied in
+  # parallel with no cross-region dependency.
   backend "s3" {
     bucket = "REPLACE_ME-tfstate"
     key    = "multi-region-sre/us-east-1/terraform.tfstate"

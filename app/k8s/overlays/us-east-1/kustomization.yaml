@@ -4,6 +4,8 @@ namespace: default
 resources:
   - ../../base
 patches:
+  # Stamps this region's name into the REPLACE_REGION env var from the base
+  # Deployment, so /healthz responses are traceable to a region.
   - target:
       kind: Deployment
       name: sre-demo-app

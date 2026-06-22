@@ -1,3 +1,6 @@
+# Provisions a per-region internet-facing NLB via the AWS Load Balancer
+# Controller. Its DNS name/zone ID is what gets fed into alb_endpoints in
+# terraform/envs/global once both regions are deployed.
 apiVersion: v1
 kind: Service
 metadata:

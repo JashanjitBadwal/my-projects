@@ -21,6 +21,10 @@ resource "aws_route53_zone" "this" {
   name = var.domain_name
 }
 
+# request_interval=10s + failure_threshold=3 means Route53 detects a region
+# failure in ~30s, which is what the <5min RTO in docs/disaster-recovery.md
+# is built on. Lowering failure_threshold trades false-positive risk for
+# faster failover.
 resource "aws_route53_health_check" "region" {
   for_each = var.regions
 
@@ -36,6 +40,11 @@ resource "aws_route53_health_check" "region" {
   }
 }
 
+# Latency routing makes this active-active: each client is sent to whichever
+# region has the lowest measured latency from their location, not to a single
+# primary. evaluate_target_health + health_check_id together pull a region
+# out of rotation automatically once its health check fails, with no record
+# update needed.
 resource "aws_route53_record" "latency" {
   for_each = var.regions
 

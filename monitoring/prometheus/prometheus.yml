@@ -23,6 +23,9 @@ scrape_configs:
           - https://us-west-2.api.example.com/healthz
         labels:
           region: us-west-2
+    # Standard blackbox_exporter pattern: rewrite the scrape target so
+    # Prometheus hits blackbox-exporter:9115/probe?target=<original-url>
+    # instead of scraping the regional URL directly.
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

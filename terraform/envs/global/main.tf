@@ -6,6 +6,8 @@ terraform {
       version = "~> 5.0"
     }
   }
+  # Unlike the regional stacks, this one must be applied last — it consumes
+  # alb_endpoints, which only exist once both regions' apps are deployed.
   backend "s3" {
     bucket = "REPLACE_ME-tfstate"
     key    = "multi-region-sre/global/terraform.tfstate"

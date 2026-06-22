@@ -4,6 +4,7 @@ namespace: default
 resources:
   - ../../base
 patches:
+  # Mirrors the us-east-1 overlay's region patch for this region.
   - target:
       kind: Deployment
       name: sre-demo-app

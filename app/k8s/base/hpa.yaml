@@ -7,6 +7,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: sre-demo-app
+  # maxReplicas: 9 (3x baseline) gives this region headroom to absorb the
+  # other region's traffic if it fails over here — see docs/disaster-recovery.md.
   minReplicas: 3
   maxReplicas: 9
   metrics:

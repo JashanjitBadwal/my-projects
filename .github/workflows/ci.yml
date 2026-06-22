@@ -16,6 +16,9 @@ jobs:
       - name: terraform fmt check
         run: terraform fmt -recursive -check -diff
       - name: terraform validate (modules)
+        # Validates modules only, not envs/* — the envs have real S3
+        # backends and AWS-specific vars (alb_endpoints, etc.) that aren't
+        # available in CI, so they're checked manually before apply instead.
         run: |
           for d in terraform/modules/*/; do
             echo "validating $d"

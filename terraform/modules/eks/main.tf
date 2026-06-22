@@ -57,13 +57,19 @@ resource "aws_iam_role_policy_attachment" "cluster_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
+# Both public subnets (for ALB/NLB) and private subnets (for worker nodes)
+# are passed to the cluster so the AWS Load Balancer Controller can place
+# load balancers in the public subnets while nodes stay private.
 resource "aws_eks_cluster" "this" {
   name     = var.name
   role_arn = aws_iam_role.cluster.arn
   version  = var.kubernetes_version
 
   vpc_config {
-    subnet_ids              = concat(var.private_subnet_ids, var.public_subnet_ids)
+    subnet_ids = concat(var.private_subnet_ids, var.public_subnet_ids)
+    # Both enabled: private access lets in-VPC tooling reach the API server
+    # without traversing the internet; public access keeps kubectl/CI usable
+    # from outside the VPC. Tighten to private-only + a bastion for production.
     endpoint_private_access = true
     endpoint_public_access  = true
   }
@@ -99,6 +105,10 @@ resource "aws_iam_role_policy_attachment" "node_registry" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
+# min_size == desired_size by default (see variable defaults) so the node
+# group always has enough capacity to absorb this region's full traffic
+# share if the other region fails over here; the cluster autoscaler/HPA
+# handle organic growth beyond that floor.
 resource "aws_eks_node_group" "default" {
   cluster_name    = aws_eks_cluster.this.name
   node_group_name = "${var.name}-default"

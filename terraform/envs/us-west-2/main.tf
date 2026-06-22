@@ -6,6 +6,9 @@ terraform {
       version = "~> 5.0"
     }
   }
+  # Mirrors us-east-1's stack with its own state key/region — independent
+  # state means this region can be applied, destroyed, or rebuilt without
+  # touching the other region.
   backend "s3" {
     bucket = "REPLACE_ME-tfstate"
     key    = "multi-region-sre/us-west-2/terraform.tfstate"

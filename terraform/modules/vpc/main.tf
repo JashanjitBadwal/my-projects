@@ -21,6 +21,8 @@ data "aws_availability_zones" "available" {
 }
 
 locals {
+  # Pin to the first az_count AZs so subnet CIDR allocation below stays
+  # stable across applies even if AWS returns AZs in a different order.
   azs = slice(data.aws_availability_zones.available.names, 0, var.az_count)
 }
 
@@ -42,6 +44,9 @@ resource "aws_internet_gateway" "this" {
   }
 }
 
+# Public subnets host NAT gateways and internet-facing ALBs/NLBs. The
+# kubernetes.io/role/elb tag lets the AWS Load Balancer Controller
+# auto-discover these subnets without manual subnet IDs in the Service spec.
 resource "aws_subnet" "public" {
   count                   = var.az_count
   vpc_id                  = aws_vpc.this.id
@@ -55,6 +60,8 @@ resource "aws_subnet" "public" {
   }
 }
 
+# Private subnets host EKS worker nodes. Offsetting by az_count keeps
+# public/private CIDR ranges from overlapping within the /16.
 resource "aws_subnet" "private" {
   count             = var.az_count
   vpc_id            = aws_vpc.this.id
@@ -67,6 +74,8 @@ resource "aws_subnet" "private" {
   }
 }
 
+# One NAT gateway per AZ (not a single shared one) so a single NAT/AZ
+# failure can't take down outbound traffic for the whole region.
 resource "aws_eip" "nat" {
   count  = var.az_count
   domain = "vpc"
@@ -101,6 +110,8 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
+# Per-AZ route table (rather than one shared table) so each private subnet
+# egresses through its own AZ's NAT gateway, matching the per-AZ NAT setup above.
 resource "aws_route_table" "private" {
   count  = var.az_count
   vpc_id = aws_vpc.this.id

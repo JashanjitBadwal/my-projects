@@ -23,14 +23,21 @@ spec:
           ports:
             - containerPort: 8080
           env:
+            # Overridden per region by the kustomize patch in
+            # app/k8s/overlays/<region>/kustomization.yaml.
             - name: REGION
               value: REPLACE_REGION
+          # Gates Service/in-cluster traffic on app warm-up (see server.js);
+          # independent of livenessProbe so a slow-starting pod isn't killed.
           readinessProbe:
             httpGet:
               path: /readyz
               port: 8080
             initialDelaySeconds: 2
             periodSeconds: 5
+          # Only restarts the pod if the process itself is wedged; does not
+          # gate external (Route53) traffic — that's the separate health
+          # check in terraform/modules/route53 against the same /healthz path.
           livenessProbe:
             httpGet:
               path: /healthz
