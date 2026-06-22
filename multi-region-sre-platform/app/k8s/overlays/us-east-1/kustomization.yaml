@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: default
+resources:
+  - ../../base
+patches:
+  # Stamps this region's name into the REPLACE_REGION env var from the base
+  # Deployment, so /healthz responses are traceable to a region.
+  - target:
+      kind: Deployment
+      name: sre-demo-app
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0/value
+        value: us-east-1
