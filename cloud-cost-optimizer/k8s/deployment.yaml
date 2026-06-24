@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloud-cost-optimizer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloud-cost-optimizer
+  template:
+    metadata:
+      labels:
+        app: cloud-cost-optimizer
+    spec:
+      serviceAccountName: cloud-cost-optimizer
+      containers:
+        - name: backend
+          image: cloud-cost-optimizer-backend:latest
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - secretRef:
+                name: cloud-cost-optimizer-secrets
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
