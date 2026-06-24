@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Docker ENTRYPOINT for the app image: blocks until Postgres is accepting
+# connections, then execs the original CMD/args. Prevents the app (or test
+# run) from racing the sidecar container's startup.
 set -euo pipefail
 
 host="${DB_HOST:-localhost}"
