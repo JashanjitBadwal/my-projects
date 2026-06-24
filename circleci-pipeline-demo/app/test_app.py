@@ -9,6 +9,9 @@ from app import app, get_connection
 
 @pytest.fixture(scope="session", autouse=True)
 def seed_database():
+    # Belt-and-suspenders retry on top of the image's wait-for-postgres.sh
+    # entrypoint: the sidecar container can accept TCP connections slightly
+    # before it's ready to serve queries, so retry rather than assume.
     last_error = None
     for _ in range(20):
         try:

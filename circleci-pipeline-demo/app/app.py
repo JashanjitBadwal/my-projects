@@ -6,6 +6,9 @@ app = Flask(__name__)
 
 
 def get_connection():
+    # Connection params default to the values the CI test job's postgres
+    # sidecar is started with (see .circleci/config.yml), but are
+    # overridable via env vars for other environments.
     return psycopg2.connect(
         host=os.environ.get("DB_HOST", "localhost"),
         port=os.environ.get("DB_PORT", "5432"),
