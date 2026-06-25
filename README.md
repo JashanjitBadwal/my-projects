@@ -19,3 +19,4 @@ A minimal Flask + PostgreSQL service ("widget-service") built to drive a CircleC
 - **Testing:** pytest with JUnit-formatted results collected by CircleCI
 - **Secure publish:** OIDC-authenticated upload to **AWS S3** that runs only on merge to `main` — no static AWS keys stored anywhere
 - **Tooling:** Helper scripts for running tests, waiting on Postgres, and publishing artifacts
+
